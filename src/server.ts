@@ -4,7 +4,7 @@ import axios from 'axios';
 import { JobBoardPayload } from './types';
 import { transformInputToContact, createApplicationPayload } from './transformers';
 import dotenv from 'dotenv';
-import { ATS_APPLICATION_URL, ATS_CONTRACT_URL } from './urls';
+import { createATSApplication, createATSContact } from './services';
 
 dotenv.config();
 
@@ -30,22 +30,14 @@ app.post('/apply', authenticate, async (req: Request, res: Response) => {
         const contactData = transformInputToContact(inputData);
 
         // Create Contact in ATS
-        const contactResponse = await axios.post(ATS_CONTRACT_URL, contactData, {
-            headers: {
-                'Authorization': `Bearer ${process.env.ATS_API_KEY}`
-            }
-        });
+        const contactResponse = await createATSContact(contactData)
         const contactId = contactResponse.data.id;
 
         // Create Application in ATS
         const applicationData = createApplicationPayload(inputData.jobid, contactId);
-        await axios.post(ATS_APPLICATION_URL, applicationData, {
-            headers: {
-                'Authorization': `Bearer ${process.env.ATS_API_KEY}`
-            }
-        });
+        const { data } = await createATSApplication(applicationData);
 
-        res.status(200).json({ message: 'Application submitted successfully' });
+        res.status(200).json({ message: 'Application submitted successfully', data });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ message: 'Failed to submit application', error: String(error) });

@@ -143,6 +143,10 @@ export const ATS_APPLICATION_URL=`${process.env.ATS_BASE_URL}/createApplication`
 
 ```
 
+### 5. Create Services File
+
+The services file contains functions that handle all outbound requests from the project. It also allows us to mock the behaviour of the ATS service in test environments to make sure that everything our code works smoothly
+
 ### 5. Create Express Server
 
 Create an Express server to handle incoming POST requests:
@@ -155,7 +159,7 @@ import axios from 'axios';
 import { JobBoardPayload } from './types';
 import { transformInputToContact, createApplicationPayload } from './transformers';
 import dotenv from 'dotenv';
-import { ATS_APPLICATION_URL, ATS_CONTRACT_URL } from './urls';
+import { createATSApplication, createATSContact } from './requests';
 
 dotenv.config();
 
@@ -181,20 +185,12 @@ app.post('/apply', authenticate, async (req: Request, res: Response) => {
         const contactData = transformInputToContact(inputData);
 
         // Create Contact in ATS
-        const contactResponse = await axios.post(ATS_CONTRACT_URL, contactData, {
-            headers: {
-                'Authorization': `Bearer ${process.env.ATS_API_KEY}`
-            }
-        });
+        const contactResponse = await createATSContact(contactData)
         const contactId = contactResponse.data.id;
 
         // Create Application in ATS
         const applicationData = createApplicationPayload(inputData.jobid, contactId);
-        await axios.post(ATS_APPLICATION_URL, applicationData, {
-            headers: {
-                'Authorization': `Bearer ${process.env.ATS_API_KEY}`
-            }
-        });
+       await createATSApplication(applicationData);
 
         res.status(200).json({ message: 'Application submitted successfully' });
     } catch (error) {
@@ -206,7 +202,6 @@ app.post('/apply', authenticate, async (req: Request, res: Response) => {
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
 ```
 
 ### 6. Environment Variables
@@ -215,6 +210,7 @@ Create a `.env` file to store your API keys and other sensitive information:
 
 ```
 //.env
+NODE_ENV=development
 ATS_BASE_URL=https://ats.example.com/api
 JOBBOARD_API_KEY=your_jobboard_api_key
 ATS_API_KEY=your_ats_api_key
@@ -222,8 +218,14 @@ ATS_API_KEY=your_ats_api_key
 
 ### 7. Testing
 
+Run
+```bash
+npm run start
+```
+
 Use Postman to simulate incoming data and test the endpoints:
 
+- **Base URL** `http://localhost:3000`
 - **Endpoint**: `POST /apply`
 - **Headers**:
   - `Authorization`: `Bearer your_jobboard_api_key`
