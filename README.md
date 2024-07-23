@@ -147,7 +147,47 @@ export const ATS_APPLICATION_URL=`${process.env.ATS_BASE_URL}/createApplication`
 
 The services file contains functions that handle all outbound requests from the project. It also allows us to mock the behaviour of the ATS service in test environments to make sure that everything our code works smoothly
 
-### 5. Create Express Server
+```typescript
+// src/services.ts
+import axios from "axios";
+import { ApplicationPayload, ContactPayload } from "./types";
+import { ATS_APPLICATION_URL, ATS_CONTRACT_URL } from "./urls";
+import { v4 as uuidv4 } from 'uuid';
+
+export const createATSContact = async (contactData: ContactPayload) => {
+    if (process.env.NODE_ENV === 'production') {
+        return await axios.post(ATS_CONTRACT_URL, contactData, {
+            headers: {
+                'Authorization': `Bearer ${process.env.ATS_API_KEY}`
+            }
+        });
+    } else {
+        return {
+            data: {
+                id: uuidv4()
+            }
+        }
+    }
+}
+
+export const createATSApplication = async(applicationData: ApplicationPayload) => {
+    if (process.env.NODE_ENV === 'production') {
+        return  await axios.post(ATS_APPLICATION_URL, applicationData, {
+            headers: {
+                'Authorization': `Bearer ${process.env.ATS_API_KEY}`
+            }
+        });
+    } else {
+        return {
+            data: {
+                ...applicationData
+            }
+        }
+    }
+}
+```
+
+### 6. Create Express Server
 
 Create an Express server to handle incoming POST requests:
 
@@ -204,7 +244,7 @@ app.listen(PORT, () => {
 });
 ```
 
-### 6. Environment Variables
+### 7. Environment Variables
 
 Create a `.env` file to store your API keys and other sensitive information:
 
@@ -216,7 +256,7 @@ JOBBOARD_API_KEY=your_jobboard_api_key
 ATS_API_KEY=your_ats_api_key
 ```
 
-### 7. Testing
+### 8. Testing
 
 Run
 ```bash
@@ -242,6 +282,6 @@ Use Postman to simulate incoming data and test the endpoints:
   }
   ```
 
-### 8. Refinement and Error Handling
+### 9. Refinement and Error Handling
 
 Refine the code based on the answers to the refinement questions and additional testing.
